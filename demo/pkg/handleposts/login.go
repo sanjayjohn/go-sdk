@@ -34,6 +34,7 @@ func Login(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	json.Unmarshal(b, &credentials)
 
 	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PostAuthLoginByEmail(
+		r.Context(),
 		credentials,
 	)
 	if err != nil {

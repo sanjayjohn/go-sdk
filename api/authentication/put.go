@@ -1,6 +1,8 @@
 package lrauthentication
 
 import (
+	"context"
+
 	"github.com/LoginRadius/go-sdk/httprutils"
 	lrvalidate "github.com/LoginRadius/go-sdk/internal/validate"
 )
@@ -14,11 +16,12 @@ import (
 // Optional post parameters - qq_captcha_randstr: string;g-recaptcha-response:string; securityanswer; string; qq_captcha_ticket: string;
 
 // Required query parameter: apiKey; Optional query parameters: url, welcometemplate
-func (lr Loginradius) PutAuthVerifyEmailByOtp(body interface{}, queries ...interface{}) (*httprutils.Response, error) {
+func (lr Loginradius) PutAuthVerifyEmailByOtp(ctx context.Context, body interface{}, queries ...interface{}) (*httprutils.Response, error) {
 	request, err := lr.Client.NewPutReq("/identity/v2/auth/email", body)
 	if err != nil {
 		return nil, err
 	}
+	request.WithContext(ctx)
 
 	for _, arg := range queries {
 		allowedQueries := map[string]bool{
@@ -48,13 +51,14 @@ func (lr Loginradius) PutAuthVerifyEmailByOtp(body interface{}, queries ...inter
 
 // Pass data in struct lrbody.ChangePassword as body to help ensure parameters satisfy API requirements; alternatively,
 // []byte or map[string]string{} could also be passed as body
-func (lr Loginradius) PutAuthChangePassword(body interface{}) (*httprutils.Response, error) {
+func (lr Loginradius) PutAuthChangePassword(ctx context.Context, body interface{}) (*httprutils.Response, error) {
 
 	request, err := lr.Client.NewPutReqWithToken("/identity/v2/auth/password/change", body)
 
 	if err != nil {
 		return nil, err
 	}
+	request.WithContext(ctx)
 
 	response, err := lr.Client.HTTPRClient.Send(*request)
 	return response, err
@@ -88,11 +92,12 @@ func (lr Loginradius) PutAuthLinkSocialIdentities(token string, body interface{}
 
 // Pass data in struct lrbody.EmailStr as body to help ensure parameters satisfy API requirements; alternatively,
 // []byte or map[string]string{} could also be passed as body
-func (lr Loginradius) PutResendEmailVerification(body interface{}, queries ...interface{}) (*httprutils.Response, error) {
+func (lr Loginradius) PutResendEmailVerification(ctx context.Context, body interface{}, queries ...interface{}) (*httprutils.Response, error) {
 	request, err := lr.Client.NewPutReq("/identity/v2/auth/register", body)
 	if err != nil {
 		return nil, err
 	}
+	request.WithContext(ctx)
 
 	for _, arg := range queries {
 		allowedQueries := map[string]bool{
@@ -146,12 +151,13 @@ func (lr Loginradius) PutAuthResetPasswordByResetToken(body interface{}) (*httpr
 
 // Pass data in struct lrbody.ResetPwOtp as body to help ensure parameters satisfy API requirements;alternatively,
 // []byte or map[string]string{} could also be passed as body
-func (lr Loginradius) PutAuthResetPasswordByOTP(body interface{}, queries ...interface{}) (*httprutils.Response, error) {
+func (lr Loginradius) PutAuthResetPasswordByOTP(ctx context.Context, body interface{}, queries ...interface{}) (*httprutils.Response, error) {
 	request, err := lr.Client.NewPutReq("/identity/v2/auth/password/reset", body)
 
 	if err != nil {
 		return nil, err
 	}
+	request.WithContext(ctx)
 
 	for _, arg := range queries {
 		allowedQueries := map[string]bool{

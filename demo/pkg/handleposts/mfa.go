@@ -34,6 +34,7 @@ func MfaLogin(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	json.Unmarshal(b, &credentials)
 
 	res, err := mfa.Loginradius(mfa.Loginradius{lrclient}).PostMFAEmailLogin(
+		r.Context(),
 		credentials,
 	)
 	if err != nil {

@@ -1,6 +1,8 @@
 package lrauthentication
 
 import (
+	"context"
+
 	"github.com/LoginRadius/go-sdk/httprutils"
 	lrvalidate "github.com/LoginRadius/go-sdk/internal/validate"
 )
@@ -49,7 +51,7 @@ func (lr Loginradius) PostAuthAddEmail(body interface{}, queries ...interface{})
 // Required post parameter - email: string
 
 // Pass data in struct lrbody.EmailStr as body to help ensure parameters satisfy API requirements
-func (lr Loginradius) PostAuthForgotPassword(body interface{}, queries interface{}) (*httprutils.Response, error) {
+func (lr Loginradius) PostAuthForgotPassword(ctx context.Context, body interface{}, queries interface{}) (*httprutils.Response, error) {
 	allowedQueries := map[string]bool{"resetpasswordurl": true, "emailtemplate": true}
 	validatedQueries, err := lrvalidate.Validate(allowedQueries, queries)
 
@@ -61,6 +63,7 @@ func (lr Loginradius) PostAuthForgotPassword(body interface{}, queries interface
 	if err != nil {
 		return nil, err
 	}
+	request.WithContext(ctx)
 	response, err := lr.Client.HTTPRClient.Send(*request)
 	return response, err
 }
@@ -108,8 +111,12 @@ func (lr Loginradius) PostAuthUserRegistrationByEmail(sott string, body interfac
 // Required query parameters: apiKey; optional query parameters: verificationurl, loginurl, emailtemplate, g-recaptcha-response
 
 // Required body parameters: email, password; optional body parameters: security answer
-func (lr Loginradius) PostAuthLoginByEmail(body interface{}, queries ...interface{}) (*httprutils.Response, error) {
+func (lr Loginradius) PostAuthLoginByEmail(ctx context.Context, body interface{}, queries ...interface{}) (*httprutils.Response, error) {
 	request, err := lr.Client.NewPostReq("/identity/v2/auth/login", body)
+	if err != nil {
+		return nil, err
+	}
+	request.WithContext(ctx)
 	for _, arg := range queries {
 		allowedQueries := map[string]bool{
 			"verificationurl": true, "loginurl": true, "emailtemplate": true, "g-recaptcha-response": true,

@@ -32,6 +32,7 @@ func ForgotPassword(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	b, _ := ioutil.ReadAll(r.Body)
 	json.Unmarshal(b, &email)
 	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PostAuthForgotPassword(
+		r.Context(),
 		email,
 		map[string]string{"resetpasswordurl": r.URL.Query().Get("reset_password_url")},
 	)
