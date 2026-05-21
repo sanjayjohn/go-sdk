@@ -265,11 +265,12 @@ func (lr Loginradius) PutAuthSetOrChangeUsername(body interface{}) (*httprutils.
 
 // Pass data in struct lrbody.UpdateProfile as body to help ensure parameters satisfy API requirements; alternatively,
 // []byte or map[string]string{} could also be passed as body
-func (lr Loginradius) PutAuthUpdateProfileByToken(body interface{}, queries ...interface{}) (*httprutils.Response, error) {
+func (lr Loginradius) PutAuthUpdateProfileByToken(ctx context.Context, body interface{}, queries ...interface{}) (*httprutils.Response, error) {
 	request, err := lr.Client.NewPutReqWithToken("/identity/v2/auth/account", body)
 	if err != nil {
 		return nil, err
 	}
+	request.WithContext(ctx)
 
 	for _, arg := range queries {
 		allowedQueries := map[string]bool{

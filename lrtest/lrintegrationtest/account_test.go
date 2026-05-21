@@ -1,6 +1,7 @@
 package lrintegrationtest
 
 import (
+	"context"
 	"os"
 	"strconv"
 	"testing"
@@ -220,7 +221,7 @@ func TestPutManageAccountSetPassword(t *testing.T) {
 	_, _, testuid, _, lrclient, teardownTestCase := setupAccount(t)
 	defer teardownTestCase(t)
 	body := lrbody.AccountPassword{"password"}
-	response, err := lraccount.Loginradius(lraccount.Loginradius{lrclient}).PutManageAccountSetPassword(testuid, body)
+	response, err := lraccount.Loginradius(lraccount.Loginradius{lrclient}).PutManageAccountSetPassword(context.Background(), testuid, body)
 	if err != nil {
 		t.Errorf("Error making PutManageAccountbetPassword call: %+v", err)
 	}

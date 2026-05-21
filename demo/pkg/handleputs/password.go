@@ -126,6 +126,7 @@ func SetPassword(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 
 	res, err := account.Loginradius(account.Loginradius{lrclient}).
 		PutManageAccountSetPassword(
+			r.Context(),
 			r.URL.Query().Get("uid"),
 			data,
 		)

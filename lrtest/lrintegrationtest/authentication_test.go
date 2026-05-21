@@ -639,7 +639,7 @@ func TestPutAuthUpdateProfileByToken(t *testing.T) {
 	_, _, _, _, _, lrclient, teardownTestCase := setupLogin(t)
 	defer teardownTestCase(t)
 	request := TestUsername{"newname"}
-	_, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PutAuthUpdateProfileByToken(request)
+	_, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PutAuthUpdateProfileByToken(context.Background(), request)
 	if err != nil {
 		t.Errorf("Error making call to PutAuthUpdateProfileByToken: %+v", err)
 	}

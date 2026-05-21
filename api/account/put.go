@@ -1,6 +1,8 @@
 package lraccount
 
 import (
+	"context"
+
 	"github.com/LoginRadius/go-sdk/httprutils"
 	lrvalidate "github.com/LoginRadius/go-sdk/internal/validate"
 )
@@ -39,12 +41,13 @@ func (lr Loginradius) PutManageAccountUpdateSecurityQuestionConfig(uid string, b
 
 // Pass data in struct lrbody.AccountPassword as body to help ensure parameters satisfy API requirements; alternatively,
 // []byte could also be passed as body
-func (lr Loginradius) PutManageAccountSetPassword(uid string, body interface{}) (*httprutils.Response, error) {
+func (lr Loginradius) PutManageAccountSetPassword(ctx context.Context, uid string, body interface{}) (*httprutils.Response, error) {
 
 	request, err := lr.Client.NewPutReq("/identity/v2/manage/account/"+uid+"/password", body)
 	if err != nil {
 		return nil, err
 	}
+	request.WithContext(ctx)
 	lr.Client.AddApiCredentialsToReqHeader(request)
 
 	response, err := lr.Client.HTTPRClient.Send(*request)
