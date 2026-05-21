@@ -1,6 +1,7 @@
 package lrintegrationtest
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -11,6 +12,7 @@ import (
 	lr "github.com/LoginRadius/go-sdk"
 	lraccount "github.com/LoginRadius/go-sdk/api/account"
 	lrauthentication "github.com/LoginRadius/go-sdk/api/authentication"
+	"github.com/LoginRadius/go-sdk/internal/sott"
 	lrbody "github.com/LoginRadius/go-sdk/lrbody"
 	"github.com/LoginRadius/go-sdk/lrerror"
 	"github.com/LoginRadius/go-sdk/lrjson"
@@ -38,11 +40,12 @@ func TestPostAuthUserRegistrationByEmail(t *testing.T) {
 
 	lrclient, _ := lr.NewLoginradius(&cfg)
 	loginradius := lrauthentication.Loginradius{lrclient}
+	sottToken := sott.Generate(lrclient.Context.ApiKey, lrclient.Context.ApiSecret, "10", "", "")
 
 	testEmail := "lrtest" + strconv.FormatInt(time.Now().Unix(), 10) + "@mailinator.com"
 	user := lrbody.RegistrationUser{}
 
-	res, err := lrauthentication.Loginradius(loginradius).PostAuthUserRegistrationByEmail(user)
+	res, err := lrauthentication.Loginradius(loginradius).PostAuthUserRegistrationByEmail(sottToken, user)
 	if err == nil || err.(lrerror.Error).Code() != "LoginradiusRespondedWithError" {
 		t.Errorf("PostAuthUserRegistrationByEmail Fail: Expected Error %v, instead received res: %+v, received error: %+v", "LoginradiusRespondedWithError", res, err)
 	}
@@ -57,12 +60,12 @@ func TestPostAuthUserRegistrationByEmail(t *testing.T) {
 		Password: "password",
 	}
 
-	res, err = lrauthentication.Loginradius(loginradius).PostAuthUserRegistrationByEmail(user)
+	res, err = lrauthentication.Loginradius(loginradius).PostAuthUserRegistrationByEmail(sottToken, user)
 	if res.StatusCode != 200 {
 		t.Errorf("PostAuthUserRegistrationByEmail Success: Expected StatusCode %v, received %v", 200, res)
 	}
 
-	res, err = lrauthentication.Loginradius(loginradius).PostAuthUserRegistrationByEmail(user)
+	res, err = lrauthentication.Loginradius(loginradius).PostAuthUserRegistrationByEmail(sottToken, user)
 	if err == nil || err.(lrerror.Error).Code() != "LoginradiusRespondedWithError" {
 		t.Errorf("PostAuthUserRegistrationByEmail Fail: Expected Error %v, instead received res: %+v, received error: %+v", "LoginradiusRespondedWithError", res, err)
 	}
@@ -126,7 +129,7 @@ func TestPostAuthForgotPassword(t *testing.T) {
 	_, _, _, testEmail, _, lrclient, teardownTestCase := setupLogin(t)
 	defer teardownTestCase(t)
 	email := TestEmail{testEmail}
-	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PostAuthForgotPassword(email, map[string]string{"resetpasswordurl": "resetpassword.com"})
+	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PostAuthForgotPassword(context.Background(), email, map[string]string{"resetpasswordurl": "resetpassword.com"})
 	if err != nil {
 		t.Errorf("Error making PostAuthForgotPassword call: %v", err)
 	}
@@ -140,7 +143,7 @@ func TestPostAuthForgotPasswordInvalidQuery(t *testing.T) {
 	_, _, _, testEmail, _, lrclient, teardownTestCase := setupLogin(t)
 	defer teardownTestCase(t)
 	email := TestEmail{testEmail}
-	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PostAuthForgotPassword(email, map[string]string{"wrongqueryname": "www.example.com"})
+	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PostAuthForgotPassword(context.Background(), email, map[string]string{"wrongqueryname": "www.example.com"})
 	if err.(lrerror.Error).Code() != "ValidationError" {
 		t.Errorf("PostAuthForgotPassword should fail with ValidationError but did not :%v, %+v", res.Body, err)
 	}
@@ -150,7 +153,7 @@ func TestPostAuthForgotPasswordInvalid(t *testing.T) {
 	_, _, _, _, _, lrclient, teardownTestCase := setupLogin(t)
 	defer teardownTestCase(t)
 	invalid := struct{ foo string }{"bar"}
-	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PostAuthForgotPassword(invalid, map[string]string{"resetpasswordurl": "www.example.com"})
+	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PostAuthForgotPassword(context.Background(), invalid, map[string]string{"resetpasswordurl": "www.example.com"})
 	if err.(lrerror.Error).Code() != "LoginradiusRespondedWithError" {
 		t.Errorf("PostAuthForgotPassword should fail with LoginradiusRespondedWithError but did not :%v, %+v", res.Body, err)
 	}
@@ -160,7 +163,7 @@ func TestPostAuthLoginByEmail(t *testing.T) {
 	_, _, _, testEmail, lrclient, teardownTestCase := setupAccount(t)
 	defer teardownTestCase(t)
 	testLogin := TestEmailLogin{testEmail, testEmail}
-	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PostAuthLoginByEmail(testLogin)
+	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PostAuthLoginByEmail(context.Background(), testLogin)
 	if err != nil {
 		t.Errorf("Error making PostAuthLoginByEmail call: %v", err)
 	}
@@ -169,7 +172,7 @@ func TestPostAuthLoginByEmail(t *testing.T) {
 		t.Errorf("Error returned from PostAuthLoginByEmail call: %v", err)
 	}
 
-	res, err = lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PostAuthLoginByEmail(testLogin, map[string]string{"emailtemplate": "hello"})
+	res, err = lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PostAuthLoginByEmail(context.Background(), testLogin, map[string]string{"emailtemplate": "hello"})
 
 	if err != nil {
 		t.Errorf("Error making PostAuthLoginByEmail call with optional queries: %v", err)
@@ -184,7 +187,7 @@ func TestPostAuthLoginByEmailInvalidBody(t *testing.T) {
 	_, _, _, _, lrclient, teardownTestCase := setupAccount(t)
 	defer teardownTestCase(t)
 	invalid := struct{ foo string }{"bar"}
-	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PostAuthLoginByEmail(invalid)
+	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PostAuthLoginByEmail(context.Background(), invalid)
 	if err.(lrerror.Error).Code() != "LoginradiusRespondedWithError" {
 		t.Errorf("PostAuthLoginByEmail should fail with LoginradiusRespondedWithError but did not: %v", res.Body)
 	}
@@ -194,7 +197,7 @@ func TestPostAuthLoginByEmailInvalidQuery(t *testing.T) {
 	_, _, _, email, lrclient, teardownTestCase := setupAccount(t)
 	defer teardownTestCase(t)
 	user := TestEmailLogin{email, email}
-	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PostAuthLoginByEmail(user, map[string]string{"invalidparam": "value"})
+	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PostAuthLoginByEmail(context.Background(), user, map[string]string{"invalidparam": "value"})
 	if err.(lrerror.Error).Code() != "ValidationError" {
 		t.Errorf("PostAuthLoginByEmail should fail with ValidationError but did not :%v, %+v", res.Body, err)
 	}
@@ -496,7 +499,7 @@ func TestPutAuthChangePassword(t *testing.T) {
 	_, _, _, email, _, lrclient, teardownTestCase := setupLogin(t)
 	defer teardownTestCase(t)
 	passwords := PassChange{email, email + "1"}
-	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PutAuthChangePassword(passwords)
+	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PutAuthChangePassword(context.Background(), passwords)
 	if err != nil {
 		t.Errorf("Error calling PutAuthChangePassword: %+v", err)
 	}
@@ -510,7 +513,7 @@ func TestPutResendEmailVerification(t *testing.T) {
 	_, retEmail, _, lrclient, teardownTestCase := setupEmailVerificationAccount(t)
 	defer teardownTestCase(t)
 	emailRef := TestEmail{retEmail}
-	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PutResendEmailVerification(emailRef)
+	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PutResendEmailVerification(context.Background(), emailRef)
 	if err != nil {
 		t.Errorf("Error calling PutResendEmailVerification: %v", err)
 	}
@@ -519,7 +522,7 @@ func TestPutResendEmailVerification(t *testing.T) {
 		t.Errorf("Error returned for PutResendEmailVerification: %v", err)
 	}
 
-	res, err = lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PutResendEmailVerification(emailRef, map[string]string{"emailtemplate": "hello"})
+	res, err = lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PutResendEmailVerification(context.Background(), emailRef, map[string]string{"emailtemplate": "hello"})
 	if err != nil {
 		t.Errorf("Error calling PutResendEmailVerification: %v", err)
 	}
@@ -533,7 +536,7 @@ func TestPutResendEmailVerificationInvalid(t *testing.T) {
 	_, retEmail, _, lrclient, teardownTestCase := setupEmailVerificationAccount(t)
 	defer teardownTestCase(t)
 	emailRef := TestEmail{retEmail}
-	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PutResendEmailVerification(map[string]string{"invalidquery": "hello"}, emailRef)
+	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).PutResendEmailVerification(context.Background(), map[string]string{"invalidquery": "hello"}, emailRef)
 	if err == nil || err.(lrerror.Error).Code() != "ValidationError" {
 		t.Errorf("Should fail with ValidationError, but got instead:%+v, %v", res, err)
 	}
@@ -774,9 +777,9 @@ func TestGetPasswordlessLoginByUsername(t *testing.T) {
 	}
 }
 
-//Comment out t.SkipNow() and manually set verificationtoken to run test
-//verificationtoken needs to be retrieved from email inbox after
-//calling GetPasswordlessLoginByEmail or ByUsername APIs
+// Comment out t.SkipNow() and manually set verificationtoken to run test
+// verificationtoken needs to be retrieved from email inbox after
+// calling GetPasswordlessLoginByEmail or ByUsername APIs
 func TestGetPasswordlessLoginVerification(t *testing.T) {
 	t.SkipNow()
 	SetTestEnv()

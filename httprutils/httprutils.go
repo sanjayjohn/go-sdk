@@ -3,8 +3,10 @@ package httprutils
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -29,6 +31,18 @@ type Request struct {
 	Headers     map[string]string
 	QueryParams map[string]string
 	Body        *bytes.Buffer
+	// Ctx carries trace/cancellation context for the outbound HTTP request.
+	// When nil, BuildRequestObject falls back to context.Background() to
+	// preserve backward compatibility with callers that don't set it.
+	Ctx context.Context
+}
+
+// WithContext returns the request with ctx attached so the outbound HTTP
+// request inherits trace and cancellation propagation. Returns the receiver
+// for fluent chaining.
+func (r *Request) WithContext(ctx context.Context) *Request {
+	r.Ctx = ctx
+	return r
 }
 
 // DefaultClient is used if no custom HTTP client is defined
@@ -65,7 +79,11 @@ func BuildRequestObject(request Request) (*http.Request, error) {
 		request.Body = encodedBody
 	}
 
-	req, err := http.NewRequest(string(request.Method), request.URL, request.Body)
+	ctx := request.Ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	req, err := http.NewRequestWithContext(ctx, string(request.Method), request.URL, request.Body)
 	if err != nil {
 		err = lrerror.New("EncodingError", "Error constructing http request", err)
 		return req, err
@@ -83,18 +101,35 @@ func MakeRequest(req *http.Request) (*http.Response, error) {
 }
 
 // BuildResponse builds the response struct.
-func BuildResponse(res *http.Response) (*Response, error) {
-	response := Response{}
+func BuildResponse(res *http.Response) (response *Response, err error) {
+	if res == nil || res.Body == nil {
+		err := lrerror.New("EncodingError", "Error reading the response body", errors.New("nil http response body"))
+		return nil, err
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			recoveredErr, ok := r.(error)
+			if !ok {
+				recoveredErr = fmt.Errorf("%v", r)
+			}
+			err = lrerror.New("EncodingError", "Error reading the response body", recoveredErr)
+			response = nil
+		}
+	}()
+	defer res.Body.Close()
+
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
 		err := lrerror.New("EncodingError", "Error reading the response body", err)
 		return nil, err
 	}
 
+	response = &Response{}
 	if res.StatusCode < 200 || res.StatusCode > 299 {
 		err = lrerror.New("LoginradiusRespondedWithError", "Received error response from Loginradius", errors.New(string(body)))
 	} else {
-		response = Response{
+		response = &Response{
 			StatusCode: res.StatusCode,
 			Body:       string(body),
 			Headers:    res.Header,
@@ -102,8 +137,7 @@ func BuildResponse(res *http.Response) (*Response, error) {
 		}
 	}
 
-	res.Body.Close()
-	return &response, err
+	return response, err
 }
 
 func Send(request Request) (*Response, error) {
@@ -137,16 +171,15 @@ func (c *Client) Send(request Request) (*Response, error) {
 	return BuildResponse(res)
 }
 
-
 var tr = &http.Transport{
-	MaxIdleConns:       100,
-	MaxConnsPerHost:    100,
+	MaxIdleConns:        100,
+	MaxConnsPerHost:     100,
 	MaxIdleConnsPerHost: 100,
 }
 
 // Custom client with time out after 8 seconds
 var NetClient = &http.Client{
-	Timeout: time.Second * 8,
+	Timeout:   time.Second * 8,
 	Transport: tr,
 }
 
