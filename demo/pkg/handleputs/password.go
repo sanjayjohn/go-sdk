@@ -84,7 +84,7 @@ func ChangePassword(w http.ResponseWriter, r *http.Request, ps httprouter.Params
 	}
 
 	res, err := lrauthentication.Loginradius(lrauthentication.Loginradius{lrclient}).
-		PutAuthChangePassword(data)
+		PutAuthChangePassword(r.Context(), data)
 
 	if err != nil {
 		errors = errors + err.(lrerror.Error).OrigErr().Error()

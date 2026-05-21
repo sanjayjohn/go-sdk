@@ -3,6 +3,7 @@ package httprutils
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -30,6 +31,18 @@ type Request struct {
 	Headers     map[string]string
 	QueryParams map[string]string
 	Body        *bytes.Buffer
+	// Ctx carries trace/cancellation context for the outbound HTTP request.
+	// When nil, BuildRequestObject falls back to context.Background() to
+	// preserve backward compatibility with callers that don't set it.
+	Ctx context.Context
+}
+
+// WithContext returns the request with ctx attached so the outbound HTTP
+// request inherits trace and cancellation propagation. Returns the receiver
+// for fluent chaining.
+func (r *Request) WithContext(ctx context.Context) *Request {
+	r.Ctx = ctx
+	return r
 }
 
 // DefaultClient is used if no custom HTTP client is defined
@@ -66,7 +79,11 @@ func BuildRequestObject(request Request) (*http.Request, error) {
 		request.Body = encodedBody
 	}
 
-	req, err := http.NewRequest(string(request.Method), request.URL, request.Body)
+	ctx := request.Ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	req, err := http.NewRequestWithContext(ctx, string(request.Method), request.URL, request.Body)
 	if err != nil {
 		err = lrerror.New("EncodingError", "Error constructing http request", err)
 		return req, err

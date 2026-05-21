@@ -1,6 +1,8 @@
 package mfa
 
 import (
+	"context"
+
 	"github.com/LoginRadius/go-sdk/httprutils"
 	lrvalidate "github.com/LoginRadius/go-sdk/internal/validate"
 )
@@ -14,8 +16,12 @@ import (
 // Optional query parameters: loginurl, verificationurl, emailtemplate, smstemplate2fa
 
 // Required post parameters: email - string; password - string;
-func (lr Loginradius) PostMFAEmailLogin(body interface{}, queries ...interface{}) (*httprutils.Response, error) {
+func (lr Loginradius) PostMFAEmailLogin(ctx context.Context, body interface{}, queries ...interface{}) (*httprutils.Response, error) {
 	request, err := lr.Client.NewPostReq("/identity/v2/auth/login/2fa", body)
+	if err != nil {
+		return nil, err
+	}
+	request.WithContext(ctx)
 	for _, arg := range queries {
 		allowedQueries := map[string]bool{
 			"verificationurl": true, "loginurl": true, "emailtemplate": true, "smstemplate2fa": true,

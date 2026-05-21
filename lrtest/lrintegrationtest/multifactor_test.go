@@ -1,6 +1,7 @@
 package lrintegrationtest
 
 import (
+	"context"
 	"os"
 	"testing"
 
@@ -19,7 +20,7 @@ func TestPostMFAEmailLogin(t *testing.T) {
 	_, _, _, testEmail, lrclient, teardownTestCase := setupAccount(t)
 	defer teardownTestCase(t)
 	testLogin := TestEmailLogin{testEmail, testEmail}
-	res, err := mfa.Loginradius(mfa.Loginradius{lrclient}).PostMFAEmailLogin(testLogin)
+	res, err := mfa.Loginradius(mfa.Loginradius{lrclient}).PostMFAEmailLogin(context.Background(), testLogin)
 	if err != nil {
 		t.Errorf("Error making PostMFAEmailLogin call: %v", err)
 	}
@@ -28,7 +29,7 @@ func TestPostMFAEmailLogin(t *testing.T) {
 		t.Errorf("Error returned from PostMFAEmailLogin call: %v", err)
 	}
 
-	res, err = mfa.Loginradius(mfa.Loginradius{lrclient}).PostMFAEmailLogin(testLogin, map[string]string{"emailtemplate": "hello"})
+	res, err = mfa.Loginradius(mfa.Loginradius{lrclient}).PostMFAEmailLogin(context.Background(), testLogin, map[string]string{"emailtemplate": "hello"})
 
 	if err != nil {
 		t.Errorf("Error making PostMFAEmailLogin call with optional queries: %v", err)
@@ -45,7 +46,7 @@ func TestPostMFAEmailLoginInvalidBody(t *testing.T) {
 	_, _, _, _, lrclient, teardownTestCase := setupAccount(t)
 	defer teardownTestCase(t)
 	invalid := struct{ foo string }{"bar"}
-	res, err := mfa.Loginradius(mfa.Loginradius{lrclient}).PostMFAEmailLogin(invalid)
+	res, err := mfa.Loginradius(mfa.Loginradius{lrclient}).PostMFAEmailLogin(context.Background(), invalid)
 	if err.(lrerror.Error).Code() != "LoginradiusRespondedWithError" {
 		t.Errorf("PostMFAEmailLogin should fail with LoginradiusRespondedWithError but did not: %v", res.Body)
 	}
@@ -57,7 +58,7 @@ func TestPostMFAEmailLoginInvalidQuery(t *testing.T) {
 	_, _, _, email, lrclient, teardownTestCase := setupAccount(t)
 	defer teardownTestCase(t)
 	user := TestEmailLogin{email, email}
-	res, err := mfa.Loginradius(mfa.Loginradius{lrclient}).PostMFAEmailLogin(user, map[string]string{"invalidparam": "value"})
+	res, err := mfa.Loginradius(mfa.Loginradius{lrclient}).PostMFAEmailLogin(context.Background(), user, map[string]string{"invalidparam": "value"})
 	if err.(lrerror.Error).Code() != "ValidationError" {
 		t.Errorf("PostMFAEmailLogin should fail with ValidationError but did not :%v, %+v", res.Body, err)
 	}
@@ -210,7 +211,7 @@ func TestPutMFAValidateGoogleAuthCode(t *testing.T) {
 
 	lrclient, _ := lr.NewLoginradius(&cfg)
 
-	res, err := mfa.Loginradius(mfa.Loginradius{lrclient}).PostMFAEmailLogin(
+	res, err := mfa.Loginradius(mfa.Loginradius{lrclient}).PostMFAEmailLogin(context.Background(),
 		// Set user credentials here
 		map[string]string{"email": "", "password": ""},
 	)
@@ -256,7 +257,7 @@ func TestPutMFAValidateOTP(t *testing.T) {
 
 	lrclient, _ := lr.NewLoginradius(&cfg)
 
-	res, err := mfa.Loginradius(mfa.Loginradius{lrclient}).PostMFAEmailLogin(
+	res, err := mfa.Loginradius(mfa.Loginradius{lrclient}).PostMFAEmailLogin(context.Background(),
 		// Set user credentials here
 		map[string]string{"email": "blueberries@mailinator.com", "password": "password"},
 	)
@@ -298,7 +299,7 @@ func TestPutMFAUpdatePhoneNumber(t *testing.T) {
 	}
 
 	lrclient, _ := lr.NewLoginradius(&cfg)
-	res, err := mfa.Loginradius(mfa.Loginradius{lrclient}).PostMFAEmailLogin(
+	res, err := mfa.Loginradius(mfa.Loginradius{lrclient}).PostMFAEmailLogin(context.Background(),
 		// Set user credentials here
 		map[string]string{"email": "blueberries@mailinator.com", "password": "password"},
 	)
@@ -435,7 +436,7 @@ func TestPutMFAValidateBackupCode(t *testing.T) {
 	}
 
 	// Get secondfactorauthenticationtoken
-	res, err = mfa.Loginradius(mfa.Loginradius{lrclient}).PostMFAEmailLogin(
+	res, err = mfa.Loginradius(mfa.Loginradius{lrclient}).PostMFAEmailLogin(context.Background(),
 		// Set user credentials here
 		map[string]string{"email": "blueberries@mailinator.com", "password": "password"},
 	)
